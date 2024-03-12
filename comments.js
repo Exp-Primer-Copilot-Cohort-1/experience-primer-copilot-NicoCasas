@@ -1,55 +1,58 @@
-// Create a web server that listens to requests on port 3000 and serves the following responses:
-// - GET /comments - returns a list of comments in the following format: { comments: [...] }. The list of comments can be stored in memory as an array of objects.
-// - POST /comments - creates a new comment. The request body will contain the comment object in JSON format. The server should add it to the list of comments and return the comment object with its ID. The ID of the comment can be generated using a unique ID generation library.
-// - PUT /comments/:id - updates the comment with the specified ID. The request body will contain the comment object in JSON format. The server should update the comment with the new information and return the updated comment object.
-// - DELETE /comments/:id - deletes the comment with the specified ID. The server should return an empty response with status 204.
-// - Bonus: Validate that the request body has the correct shape when creating or updating a comment. If the request body is invalid, the server should return a 400 status code.
+// Create web server
+// Create a route to handle a post request to /comments
+// Create a route to handle a get request to /comments
+// Create a route to handle a get request to /comments/:id
+// Create a route to handle a put request to /comments/:id
+// Create a route to handle a delete request to /comments/:id
 
 const express = require('express');
-const bodyParser = require('body-parser');
-const uuid = require('uuid');
-
 const app = express();
-const port = 3000;
+app.use(express.json());
 
-app.use(bodyParser.json());
-
-let comments = [];
+const comments = [
+    { id: 1, username: 'user1', comment: 'This is the first comment' },
+    { id: 2, username: 'user2', comment: 'This is the second comment' },
+    { id: 3, username: 'user3', comment: 'This is the third comment' }
+];
 
 app.get('/comments', (req, res) => {
-  res.json({ comments });
+    res.send(comments);
+});
+
+app.get('/comments/:id', (req, res) => {
+    const comment = comments.find(c => c.id === parseInt(req.params.id));
+    if (!comment) res.status(404).send('The comment with the given ID was not found');
+    res.send(comment);
 });
 
 app.post('/comments', (req, res) => {
-  const comment = req.body;
-  const id = uuid.v4();
-  comments.push({ ...comment, id });
-  res.json({ ...comment, id });
+    const comment = {
+        id: comments.length + 1,
+        username: req.body.username,
+        comment: req.body.comment
+    };
+    comments.push(comment);
+    res.send(comment);
 });
 
 app.put('/comments/:id', (req, res) => {
-  const id = req.params.id;
-  const index = comments.findIndex(comment => comment.id === id);
-  if (index !== -1) {
-    comments[index] = { ...comments[index], ...req.body };
-    res.json(comments[index]);
-  } else {
-    res.status(404).send('Comment not found');
-  }
+    const comment = comments.find(c => c.id === parseInt(req.params.id));
+    if (!comment) res.status(404).send('The comment with the given ID was not found');
+
+    comment.username = req.body.username;
+    comment.comment = req.body.comment;
+    res.send(comment);
 });
 
 app.delete('/comments/:id', (req, res) => {
-  const id = req.params.id;
-  const index = comments.findIndex(comment => comment.id === id);
-  if (index !== -1) {
+    const comment = comments.find(c => c.id === parseInt(req.params.id));
+    if (!comment) res.status(404).send('The comment with the given ID was not found');
+
+    const index = comments.indexOf(comment);
     comments.splice(index, 1);
-    res.status(204).send();
-  } else {
-    res.status(404).send('Comment not found');
-  }
+
+    res.send(comment);
 });
 
-app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
-}
-);
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log(`Listening on port ${port}...`));
